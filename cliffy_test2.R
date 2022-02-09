@@ -47,18 +47,8 @@ color_rcpp <- cppFunction(
 
 
 
-# Output image directly to disk
-#jpeg(
-#  "clifford_attractor.jpg",
-#  width = output_width,
-#  height = output_height,
-#  pointsize = 1,
-#  bg = "black",
-#  quality = 100
-#)
-
-N_points = 2000000
-p_alpha = 0.1 #point transperancy
+N_points = 20000000
+p_alpha = 0.01 #point transperancy
 
 # Attractor parameters
 params <- c(1.7, 1.7, 0.6, 1.2)
@@ -76,7 +66,7 @@ miny <- min(points$y)
 xrange <- maxx - minx
 yrange <- maxy - miny
 
-n <- 600
+n <- 500
 points <- points %>% 
     mutate(newx = round((x - minx) / xrange * n, digits = 0) + 1,
            newy = round((y - miny) / yrange * n, digits = 0) + 1)
@@ -87,24 +77,46 @@ clrs <- color_rcpp(points$newx, points$newy, n)
 
 points$color <- clrs
 points <- points[-1, ]
-ggplot(points, aes(x, y, color = color)) +
-    geom_point(shape = ".", alpha = 0.1) +
-    theme_void() +
-    theme(legend.position = "none",
-          panel.background = element_rect(fill = "black")) +
-    scale_color_viridis(option = "magma", direction = -1) 
+# ggplot(points, aes(x, y, color = color)) +
+#     geom_point(shape = ".", alpha = 0.1) +
+#     theme_void() +
+#     theme(legend.position = "none",
+#           panel.background = element_rect(fill = "black")) +
+#     scale_color_viridis(option = "magma", direction = -1) 
 #    scale_color_distiller(type = "seq", palette = 'Blues', direction = -1)
 
 
 # base R
-cols <- brewer.pal(3, "Spectral")
+cols <- brewer.pal(6, "YlOrRd")
+display.brewer.pal(5, "YlOrRd")
 pal <- colorRamp(cols)
 points$newcolor <- points$color / max(points$color)
-points$r <- pal(c(points$newcolor))[ , 1] / 255
-points$g <- pal(c(points$newcolor))[ , 2] / 255
-points$b <- pal(c(points$newcolor))[ , 3] / 255
-points$rgb <- rgb(points$r, points$g, points$b, 0.02)
-points$Col <- rbPal(50)[as.numeric(cut(points$newcolor, breaks = 50))]
+# points$r <- pal(c(points$newcolor))[ , 1] / 255
+# points$g <- pal(c(points$newcolor))[ , 2] / 255
+# points$b <- pal(c(points$newcolor))[ , 3] / 255
+# points$rgb <- rgb(points$r, points$g, points$b, p_alpha)
+
+points <- points %>% 
+    arrange(newcolor) %>% 
+    group_by(newcolor) %>% 
+    mutate(color2 = cur_group_id())
+mymax <- max(points$color2)
+points$r <- pal(c(points$color2))[ , 1] / mymax
+points$g <- pal(c(points$color2))[ , 2] / mymax
+points$b <- pal(c(points$color2))[ , 3] / mymax
+points$rgb <- rgb(points$r, points$g, points$b, p_alpha)
 par(bg = 'black')
-plot(points$x, points$y, pch = ".", col = points$rgb)
+plot(points$x, points$y, pch = ".", col = points$color2)
+
+
+
+# Output image directly to disk
+#jpeg(
+#  "clifford_attractor.jpg",
+#  width = output_width,
+#  height = output_height,
+#  pointsize = 1,
+#  bg = "black",
+#  quality = 100
+#)
 
